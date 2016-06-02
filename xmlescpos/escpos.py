@@ -6,10 +6,13 @@ import io
 import base64
 import math
 import md5
+import logging
 import re
 import traceback
 import xml.etree.ElementTree as ET
 import xml.dom.minidom as minidom
+
+log = logging.getLogger(__name__)
 
 from PIL import Image
 
@@ -147,7 +150,7 @@ class StyleStack:
         _style = {}
         for attr in style:
             if attr in self.cmds and not style[attr] in self.cmds[attr]:
-                print 'WARNING: ESC/POS PRINTING: ignoring invalid value: '+utfstr(style[attr])+' for style: '+utfstr(attr)
+                log.warn('WARNING: ESC/POS PRINTING: ignoring invalid value: '+utfstr(style[attr])+' for style: '+utfstr(attr))
             else:
                 _style[attr] = self.enforce_type(attr, style[attr])
         self.stack.append(_style)
@@ -157,7 +160,7 @@ class StyleStack:
         _style = {}
         for attr in style:
             if attr in self.cmds and not style[attr] in self.cmds[attr]:
-                print 'WARNING: ESC/POS PRINTING: ignoring invalid value: '+utfstr(style[attr])+' for style: '+utfstr(attr)
+                log.warn('WARNING: ESC/POS PRINTING: ignoring invalid value: '+utfstr(style[attr])+' for style: '+utfstr(attr))
             else:
                 self.stack[-1][attr] = self.enforce_type(attr, style[attr])
 
@@ -385,7 +388,7 @@ class Escpos:
 
 
         if im.size[0] > 512:
-            print  "WARNING: Image is wider than 512 and could be truncated at print time "
+            log.warn("WARNING: Image is wider than 512 and could be truncated at print time ")
         if im.size[1] > 255:
             raise ImageSizeError()
 
@@ -431,12 +434,12 @@ class Escpos:
 
     def print_base64_image(self,img):
 
-        print 'print_b64_img'
+        log.debug('print_b64_img')
 
         id = md5.new(img).digest()
 
         if id not in self.img_cache:
-            print 'not in cache'
+            log.debug('not in cache')
 
             img = img[img.find(',')+1:]
             f = io.BytesIO('img')
@@ -451,16 +454,16 @@ class Escpos:
             else:
                 img.paste(img_rgba)
 
-            print 'convert image'
+            log.debug('convert image')
         
             pix_line, img_size = self._convert_image(img)
 
-            print 'print image'
+            log.debug('print image')
 
             buffer = self._raw_print_image(pix_line, img_size)
             self.img_cache[id] = buffer
 
-        print 'raw image'
+        log.debug('raw image')
 
         self._raw(self.img_cache[id])
 
@@ -523,7 +526,7 @@ class Escpos:
         if code:
             self._raw(code)
         else:
-            raise exception.BarcodeCodeError()
+            raise BarcodeCodeError()
 
     def receipt(self,xml):
         """
@@ -714,8 +717,7 @@ class Escpos:
                     self.cut()
 
         except Exception as e:
-            errmsg = str(e)+'\n'+'-'*48+'\n'+traceback.format_exc() + '-'*48+'\n'
-            self.text(errmsg)
+            log.exception("exception while printing")
             self.cut()
 
             raise e
