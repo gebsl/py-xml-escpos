@@ -699,6 +699,7 @@ class Escpos:
                 self.slip_sheet_mode = True
             else:
                 self._raw(SHEET_ROLL_MODE)
+                self.slip_sheet_mode = False
 
             self._raw(stylestack.to_escpos())
 
