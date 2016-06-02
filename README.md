@@ -156,3 +156,29 @@ any element.
 - `tabwidth`: The number of spaces in a single indentation level (default 2)
 - `color` : `black` or `red` 
 
+## Logging
+
+This library uses Python's [builtin logging module](https://docs.python.org/2/library/logging.html)
+to log exceptions, errors, warnings and informational messages. To simply get all logging information 
+printed to `stdout` for easier debugging, just add the following code before your `main()` function:
+
+    import logging
+    LOG_LEVEL = logging.DEBUG
+    
+    # set up stdout logging handler
+    out_hdlr = logging.StreamHandler(sys.stdout)
+    out_hdlr.setFormatter(logging.Formatter('%(asctime)s [%(module)s] %(message)s'))
+    out_hdlr.setLevel(LOG_LEVEL)
+    
+    # use stdout logging handler
+    log.addHandler(out_hdlr)
+    log.setLevel(LOG_LEVEL)
+    
+    # ...
+    
+    def main():
+        # add some code here which uses this great library ;)
+        # ...
+        
+    if __name__ == "__main__":
+        main()
