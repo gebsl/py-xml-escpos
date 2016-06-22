@@ -46,7 +46,7 @@ class Usb(Escpos):
 
     def close(self):
         i = 0
-        while True:
+        while self.device:
             try:
                 usb.util.release_interface(self.device, self.interface)
                 self._reattach_kernel_driver()
