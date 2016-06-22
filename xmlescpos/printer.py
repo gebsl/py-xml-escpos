@@ -38,8 +38,7 @@ class Usb(Escpos):
         if self.device is None:
             raise NoDeviceError()
         try:
-            if self.device.is_kernel_driver_active(self.interface):
-                self.device.detach_kernel_driver(self.interface) 
+            self._detach_kernel_driver()
             self.device.set_configuration()
             usb.util.claim_interface(self.device, self.interface)
         except usb.core.USBError as e:
@@ -49,19 +48,41 @@ class Usb(Escpos):
         i = 0
         while True:
             try:
-                if not self.device.is_kernel_driver_active(self.interface):
-                    usb.util.release_interface(self.device, self.interface)
-                    self.device.attach_kernel_driver(self.interface)
-                    usb.util.dispose_resources(self.device)
-                else:
-                    self.device = None
-                    return True
+                usb.util.release_interface(self.device, self.interface)
+                self._reattach_kernel_driver()
+                usb.util.dispose_resources(self.device)
+                self.device = None
             except usb.core.USBError as e:
                 i += 1
                 if i > 100:
                     return False
         
             sleep(0.1)
+
+    def _detach_kernel_driver(self):
+        """
+        Detach the kernel driver, if one is attached (Linux only). As long as
+        the kernel driver is attached, we cannot talk to the device.
+        """
+        try:
+            if self.device.is_kernel_driver_active(self.interface):
+                self.device.detach_kernel_driver(self.interface)
+        except NotImplementedError:
+            # on Windows, is_kernel_driver_active() raises NotImplementedError
+            # ignore as Windows does not have or need this functionality
+            pass
+
+    def _reattach_kernel_driver(self):
+        """
+        Reattach the kernel driver after usage (Linux only).
+        """
+        try:
+            if not self.device.is_kernel_driver_active(self.interface):
+                self.device.attach_kernel_driver(self.interface)
+        except NotImplementedError:
+            # on Windows, is_kernel_driver_active() raises NotImplementedError
+            # ignore as Windows does not have or need this functionality
+            pass
 
     def _raw(self, msg):
         """ Print any command sent in raw format """
