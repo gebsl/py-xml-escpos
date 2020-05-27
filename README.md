@@ -28,17 +28,31 @@ The following example is self-explanatory:
         <cut />
     </receipt>
 
-And printing from python is quite easy, you just
-need the USB product / vendor id of your printer. 
-Some common ids are found in `supported_devices.py`
+This library uses [python-escpos](https://github.com/python-escpos/python-escpos/) internally.
+To print, create a printer instance and call `Layout(xml).format(printer)`.
 
-    from xmlescpos.printer import Usb
-    printer = Usb(0x04b8,0x0e03)
-    printer.receipt("<div>Hello World!</div>")
+    from escpos import printer
+    from xmlescpos import Layout
+    epson = printer.Dummy()  # Or directly to USB, Serial, Network
+    
+    Layout(xml).format(epson)
+
+## Fork Information
+
+The original version was [fvdsn](https://github.com/fvdsn/py-xml-escpos), though it seems to be abandoned.
+
+[miracle2k's fork](https://github.com/miracle2k/py-xml-escpos) switched from using a local copy of 
+`python-escpos` to the [official package](https://github.com/python-escpos/python-escpos/), which also
+made the project compatible with Python3.
+
+[xoe-labs](https://github.com/xoe-labs/py-xml-escpos/) added support for QR codes and python-escpos v3,
+which is not yet final but works better than the old ones.
+
+We try to add all useful changes in this repo, pull requests welcome.
 
 ## Install
 
-    sudo pip install pyxmlescpos
+    sudo pip install git+https://github.com/greybyte/py-xml-escpos.git
 
 ## Limitations
 
@@ -47,6 +61,7 @@ are not working. Documentation is hard to find, support relies on region-specifi
 support for Japanese.
 
 # Documentation
+
 ## XML Structure
 The library prints receipts defined by utf-8 encoded XML
 documents. The tags and structure of the document are in
@@ -102,6 +117,10 @@ supported: `UPC-A`,`UPC-E`,`EAN13`,`EAN8`,`CODE39`,`ITF`,`NW7`.
     <barcode encoding="EAN13">
         5400113509509
     </barcode>
+
+### Qrcode Tags
+
+    <qr ec="0" size="3" model="2" center="X" native="">https://greybyte.com/</qr>
 
 ### Line Tag
 The `line` tag is used to quickly layout receipt lines. Its child elements
