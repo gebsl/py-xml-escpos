@@ -107,11 +107,17 @@ class StyleStack:
                 '_order': 1,
             },
             'color': {
-                'black':  TXT_STYLE['color']['black'],
+                'black': TXT_STYLE['color']['black'],
                 'red': TXT_STYLE['color']['red'],
                 '_order': 1,
             }
         }
+
+        # Some printers don't understand <ESC> r (change color). Only use
+        # it when the printer actually supports more than one color.
+        if hasattr(self.profile, 'colors') and len(self.profile.colors) < 2:
+            self.cmds['color']['black'] = b''
+            self.cmds['color']['red'] = b''
 
         self.push(self.defaults)
 
@@ -133,7 +139,6 @@ class StyleStack:
             return self.profile.get_columns(font)
 
         return value
-
 
     def enforce_type(self, attr, val):
         """converts a value to the attribute's type"""
@@ -337,8 +342,8 @@ class Layout(object):
         self._root = root = ET.fromstring(xml.encode('utf-8'))
 
         self.slip_sheet_mode = False
-        if 'sheet' in root.attrib and root.attrib['sheet'] == 'slip':
-            self.slip_sheet_mode = True
+        if 'sheet' in root.attrib:
+            self.slip_sheet_mode = root.attrib['sheet']
 
         self.open_crashdrawer = 'open-cashdrawer' in root.attrib and \
             root.attrib['open-cashdrawer'] == 'true'
@@ -557,9 +562,9 @@ class Layout(object):
         root = self._root
 
         # Init the mode
-        if self.slip_sheet_mode:
+        if self.slip_sheet_mode == 'slip':
             printer._raw(SHEET_SLIP_MODE)
-        else:
+        elif self.slip_sheet_mode == 'sheet':
             printer._raw(SHEET_ROLL_MODE)
 
         # init tye styles
@@ -574,7 +579,7 @@ class Layout(object):
             printer.cashdraw(5)
 
         if 'cut' in root.attrib and root.attrib['cut'] == 'true':
-            if self.slip_sheet_mode:
+            if self.slip_sheet_mode == 'slip':
                 printer._raw(CTL_FF)
             else:
                 printer.cut()
