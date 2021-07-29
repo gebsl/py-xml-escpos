@@ -349,12 +349,12 @@ class Layout(object):
             root.attrib['open-cashdrawer'] == 'true'
 
     def get_base64_image(self, img):
-        id = hashlib.md5(img).hexdigest()
+        id = hashlib.md5(img.encode('utf-8')).hexdigest()
 
         if id not in self.img_cache:
             img = img[img.find(',') + 1:]
-            f = io.BytesIO('img')
-            f.write(base64.decodestring(img))
+            f = io.BytesIO()
+            f.write(base64.b64decode(img))
             f.seek(0)
             img_rgba = Image.open(f)
             #img = Image.new('RGB', img_rgba.size, (255, 255, 255))
