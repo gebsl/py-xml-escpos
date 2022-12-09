@@ -48,11 +48,14 @@ made the project compatible with Python3.
 [xoe-labs](https://github.com/xoe-labs/py-xml-escpos/) added support for QR codes and python-escpos v3,
 which is not yet final but works better than the old ones.
 
+As of version 0.3.0 this package requires our [fork of python-escpos](https://github.com/tap4drink/python-escpos),
+which adds support for Star printers, but is backwards-compatible otherwise.
+
 We try to add all useful changes in this repo, pull requests welcome.
 
 ## Install
 
-    sudo pip install git+https://github.com/greybyte/py-xml-escpos.git
+    sudo pip install git+https://github.com/tap4drink/py-xml-escpos.git
 
 ## Limitations
 
@@ -120,7 +123,7 @@ supported: `UPC-A`,`UPC-E`,`EAN13`,`EAN8`,`CODE39`,`ITF`,`NW7`.
 
 ### Qrcode Tags
 
-    <qr ec="0" size="3" model="2" center="X" native="">https://greybyte.com/</qr>
+    <qr ec="0" size="3" model="2" center="X" native="">https://tap4drink.de/</qr>
 
 ### Line Tag
 The `line` tag is used to quickly layout receipt lines. Its child elements
@@ -177,7 +180,7 @@ any element.
 
 ## Logging
 
-This library uses Python's [builtin logging module](https://docs.python.org/2/library/logging.html)
+This library uses Python's [builtin logging module](https://docs.python.org/3/library/logging.html)
 to log exceptions, errors, warnings and informational messages. To simply get all logging information 
 printed to `stdout` for easier debugging, just add the following code before your `main()` function:
 

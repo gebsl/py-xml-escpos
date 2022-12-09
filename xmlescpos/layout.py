@@ -9,7 +9,7 @@ import re
 import xml.etree.ElementTree as ET
 from PIL import Image
 
-from escpos.constants import *
+from escpos.constants import PrinterCommands, StarCommands, QR_ECLEVEL_L, QR_MODEL_2, CTL_FF
 
 import logging
 import six
@@ -35,6 +35,7 @@ class StyleStack:
 
     def __init__(self, profile):
         self.profile = profile
+        self.cmdset = StarCommands() if self.profile.features.get('starCommands', False) else PrinterCommands()
         self.stack = []
         self.defaults = {   # default style values
             'align': 'left',
@@ -72,43 +73,43 @@ class StyleStack:
             # some style do not correspond to escpos command are used by
             # the serializer instead
             'align': {
-                'left': TXT_STYLE['align']['left'],
-                'right': TXT_STYLE['align']['right'],
-                'center':  TXT_STYLE['align']['center'],
+                'left': self.cmdset.TXT_STYLE['align']['left'],
+                'right': self.cmdset.TXT_STYLE['align']['right'],
+                'center':  self.cmdset.TXT_STYLE['align']['center'],
                 '_order': 1,
             },
             'underline': {
-                'off': TXT_STYLE['underline'].get(0),
-                'on': TXT_STYLE['underline'].get(1),
-                'double':  TXT_STYLE['underline'].get(2),
+                'off': self.cmdset.TXT_STYLE['underline'].get(0),
+                'on': self.cmdset.TXT_STYLE['underline'].get(1),
+                'double':  self.cmdset.TXT_STYLE['underline'].get(2),
                 # must be issued after 'size' command
                 # because ESC ! resets ESC -
                 '_order': 10,
             },
             'bold': {
-                'off': TXT_STYLE['bold'].get(False),
-                'on': TXT_STYLE['bold'].get(True),
+                'off': self.cmdset.TXT_STYLE['bold'].get(False),
+                'on': self.cmdset.TXT_STYLE['bold'].get(True),
                 # must be issued after 'size' command
                 # because ESC ! resets ESC -
                 '_order': 10,
             },
             'font': {
-                'a': TXT_FONT_A,
-                'b': TXT_FONT_B,
+                'a': self.cmdset.TXT_FONT_A,
+                'b': self.cmdset.TXT_FONT_B,
                 # must be issued after 'size' command
                 # because ESC ! resets ESC -
                 '_order': 10,
             },
             'size': {
-                'normal': TXT_STYLE['size']['normal'],
-                'double-height': TXT_STYLE['size']['2h'] ,
-                'double-width': TXT_STYLE['size']['2w'],
-                'double': TXT_STYLE['size']['2x'],
+                'normal': self.cmdset.TXT_STYLE['size']['normal'],
+                'double-height': self.cmdset.TXT_STYLE['size']['2h'] ,
+                'double-width': self.cmdset.TXT_STYLE['size']['2w'],
+                'double': self.cmdset.TXT_STYLE['size']['2x'],
                 '_order': 1,
             },
             'color': {
-                'black': TXT_STYLE['color']['black'],
-                'red': TXT_STYLE['color']['red'],
+                'black': self.cmdset.TXT_STYLE['color']['black'],
+                'red': self.cmdset.TXT_STYLE['color']['red'],
                 '_order': 1,
             }
         }
@@ -563,9 +564,9 @@ class Layout(object):
 
         # Init the mode
         if self.slip_sheet_mode == 'slip':
-            printer._raw(SHEET_SLIP_MODE)
+            printer._raw(stylestack.cmdset.SHEET_SLIP_MODE)
         elif self.slip_sheet_mode == 'sheet':
-            printer._raw(SHEET_ROLL_MODE)
+            printer._raw(stylestack.cmdset.SHEET_ROLL_MODE)
 
         # init tye styles
         printer._raw(stylestack.to_escpos())
