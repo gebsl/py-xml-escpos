@@ -64,10 +64,13 @@ setup(
     # project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/technical.html#install-requires-vs-requirements-files
-    install_requires=[
-        'python-escpos-star @ https://github.com/tap4drink/python-escpos/archive/starprnt_support.zip#egg=python-escpos-star-1.0.0',
-        'six'
-    ],
+
+    # removed as it doesn't seem to work. Specify python-escpos fork explicitely in requirements.txt instead.
+
+    # install_requires=[
+    #    'python-escpos-star @ https://github.com/tap4drink/python-escpos/archive/starprnt_support.zip#egg=python-escpos-star-1.0.0',
+    #    'six'
+    #],
 
     # List additional groups of dependencies here (e.g. development dependencies).
     # You can install these using the following syntax, for example:
