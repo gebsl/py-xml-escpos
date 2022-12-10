@@ -65,7 +65,7 @@ setup(
     # requirements files see:
     # https://packaging.python.org/en/latest/technical.html#install-requires-vs-requirements-files
     install_requires=[
-        'escpos-star @ https://github.com/tap4drink/python-escpos/archive/starprnt_support.zip#egg=escpos-star-1.0.0',
+        'python-escpos-star @ https://github.com/tap4drink/python-escpos/archive/starprnt_support.zip#egg=python-escpos-star-1.0.0',
         'six'
     ],
 
