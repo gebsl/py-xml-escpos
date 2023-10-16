@@ -17,14 +17,14 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/development.html#single-sourcing-the-version
-    version='0.3.0',
+    version='0.4.0',
 
     description='Print XML-defined Receipts on ESC/POS Receipt Printers',
     long_description=long_description,
 
     # The project's main homepage.
     url='https://github.com/tap4drink/py-xml-escpos',
-    download_url = 'https://github.com/tap4drink/py-xml-escpos/tarball/0.3.0',
+    download_url = 'https://github.com/tap4drink/py-xml-escpos/tarball/0.4.0',
 
     # Author details
     author='Frédéric van der Essen & Manuel F Martinez & Chris Vigelius',

@@ -153,15 +153,32 @@ the formatting of the provided number. The following attributes are supported:
  - `value-autoint` : The number will not print decimals if it is an integer
  - `value-symbol`  : The unit symbol will be placed before or after the number
  - `value-symbol-position` : `before` or `after`
- 
-<span />
-    
-    <value value-symbol='€' value-symbol-position='after'>
-        3.1415
-    </value>
+  
+```xml
+<value value-symbol='€' value-symbol-position='after'>
+    3.1415
+</value>
+```
 
 Those attributes are inherited, and can thus be specified once and for all
 on the receipt's root element.
+
+### Raw tag
+The `raw` tag can be used to send raw ESCPOS commands to the printer. It
+has a required attribute `contents` which is a base64-encoded string.
+
+```xml 
+<!-- send GS ( A 2 0 1 2 => print self test page --> 
+<raw contents="HShBAgABAg==" />
+```
+
+### Codepage Tag
+Outputs a code page. This can be used to determine/debug the contents of
+the printer's code pages (which sometimes differ from the documentation).
+
+```xml
+<codepage number="1" />
+```
 
 ## Styling Attributes
 

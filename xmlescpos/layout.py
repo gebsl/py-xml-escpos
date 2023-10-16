@@ -13,6 +13,7 @@ from escpos.constants import PrinterCommands, StarCommands, QR_ECLEVEL_L, QR_MOD
 
 import logging
 import six
+
 _logger = logging.getLogger(__name__)
 
 
@@ -154,22 +155,22 @@ class StyleStack:
         else:
             return utfstr(val)
 
-    def push(self, style={}):
+    def push(self, style=None):
         """push a new level on the stack with a style dictionnary containing style:value pairs"""
         _style = {}
-        for attr in style:
+        for attr in style if style else {}:
             if attr in self.cmds and not style[attr] in self.cmds[attr]:
-                _logger.warn('WARNING: ESC/POS PRINTING: ignoring invalid value: ' + utfstr(style[attr]) + ' for style: ' + utfstr(attr))
+                _logger.warning('WARNING: ESC/POS PRINTING: ignoring invalid value: ' + utfstr(style[attr]) + ' for style: ' + utfstr(attr))
             else:
                 _style[attr] = self.enforce_type(attr, style[attr])
         self.stack.append(_style)
 
-    def set(self, style={}):
+    def set(self, style=None):
         """overrides style values at the current stack level"""
         _style = {}
-        for attr in style:
+        for attr in style if style else {}:
             if attr in self.cmds and not style[attr] in self.cmds[attr]:
-                _logger.warn('WARNING: ESC/POS PRINTING: ignoring invalid value: ' + utfstr(style[attr]) + ' for style: ' + utfstr(attr))
+                _logger.warning('WARNING: ESC/POS PRINTING: ignoring invalid value: ' + utfstr(style[attr]) + ' for style: ' + utfstr(attr))
             else:
                 self.stack[-1][attr] = self.enforce_type(attr, style[attr])
 
@@ -552,6 +553,15 @@ class Layout(object):
             printer.cashdraw(2)
             printer.cashdraw(5)
 
+        elif elem.tag == 'codepage':
+            number = int(elem.attrib.get('number', 0))
+            serializer.raw(printer.cmd.set_codepage(number))
+            serializer.raw(codepage_test_page())
+
+        elif elem.tag == 'raw':
+            # print raw escpos without handling
+            serializer.raw(base64.b64decode(elem.attrib.get('contents', '')))
+
         stylestack.pop()
 
     def format(self, printer):
@@ -629,3 +639,15 @@ def format_value(
         else:
             ret = symbol + ret
     return ret
+
+
+def codepage_test_page():
+    """ dumps a code page """
+    out, row = [], []
+    for rowno in range(14):
+        for col in range(16):
+            row.append((0x20+rowno*16+col).to_bytes(1, 'big'))
+        out.append('x{:x} '.format(0x20+rowno*16).encode('ascii') + b' '.join(row))
+        row=[]
+    return b'\n'.join(out)
+
