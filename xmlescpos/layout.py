@@ -332,7 +332,7 @@ class XmlTableLayout(object):
 
     Convert to ESC/POS. Send to a pyton-escpos printer object.
     """
-    def __init__(self, stylestack, serializer, min_col_size=5, col_spacing=4):
+    def __init__(self, stylestack, serializer, min_col_size=5, col_spacing=2):
         """ Parameters:
         
         stylestack (Stylestack): the currently used stylestack
@@ -371,6 +371,16 @@ class XmlTableLayout(object):
         # all overflow is deducted from largest column
         col_sizes[max_col_idx] -= max(0, sum(col_sizes) - width)
         return col_sizes
+    
+    def _get_width(self, width):
+        """ Calculates the actual character width to use based on
+        currently active font size.
+        For double size font, we just have half of the actual character count available.
+        """
+
+        is_double = self.stylestack.get('size') in ('double', 'double-width')
+        factor = 2 if is_double else 1
+        return int(width / factor)
 
     def _print_table_row(self, elem, col_sizes):
         sublines = []
@@ -386,10 +396,10 @@ class XmlTableLayout(object):
                 raise Exception(f'Attribute "col-sizes" only contains {len(col_sizes)} elements but {len(elem)} required')
             
             sublines.append(zip(
-                textwrap.wrap(td.text, width=col_width - self.col_spacing),
+                textwrap.wrap(td.text, width=self._get_width(col_width - self.col_spacing)),
                 itertools.repeat({
                     # enable bold mode if tag name is "th"
-                    'bold': 'on' if td.tag == 'th' else 'off'
+                    'bold': 'on' if td.tag == 'th' else 'off',
                     # copy rest of attributes
                     **td.attrib,
                 })
@@ -418,8 +428,8 @@ class XmlTableLayout(object):
                 # -1 takes care for the additional space character
                 # that is introduced by serializer.start_inline()
                 if idx > 0:
-                    text = ' ' * (self.col_spacing - 1) + text
-                pad_size = col_width - 1
+                    text = ' ' * self._get_width(self.col_spacing - 1) + text
+                pad_size = self._get_width(col_width - 1)
                 
                 if align == 'right':
                     text = text.rjust(pad_size)
