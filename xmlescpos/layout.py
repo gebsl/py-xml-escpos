@@ -396,7 +396,7 @@ class XmlTableLayout(object):
                 raise Exception(f'Attribute "col-sizes" only contains {len(col_sizes)} elements but {len(elem)} required')
             
             sublines.append(zip(
-                textwrap.wrap(td.text, width=self._get_width(col_width - self.col_spacing)),
+                textwrap.wrap(td.text or '', width=self._get_width(col_width - self.col_spacing)),
                 itertools.repeat({
                     # enable bold mode if tag name is "th"
                     'bold': 'on' if td.tag == 'th' else 'off',
@@ -449,6 +449,12 @@ class XmlTableLayout(object):
         if elem.tag not in ('table', 'tbody', 'tfoot'):
             return
         
+        self.stylestack.push()
+        if elem.tag == 'tbody':
+            self.stylestack.set({'underline': 'on'})
+        elif elem.tag == 'tfoot':
+            self.stylestack.set({'underline': 'double'})
+        
         # with col-sizes one can specify the size ratio for all columns
         col_sizes = elem.attrib.get('col-sizes', None)
         if col_sizes:
@@ -467,7 +473,7 @@ class XmlTableLayout(object):
 
                 # iterate all tds
                 for idx, td in enumerate(child):
-                    textlen = len(td.text)
+                    textlen = len(td.text or '')
                     if idx == len(col_sizes):
                         # if current td index is the same as the list's length
                         # we add another item
@@ -486,6 +492,8 @@ class XmlTableLayout(object):
             else:
                 # nested tbody or tfoot
                 self.print_elem(child, col_sizes)
+
+        self.stylestack.pop()
 
 class Layout(object):
     """Main class. Parses an XML layout.
