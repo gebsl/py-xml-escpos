@@ -465,11 +465,13 @@ class XmlTableLayout(object):
             self.stylestack.set({'underline': 'double'})
         
         # with col-sizes one can specify the size ratio for all columns
-        col_sizes = elem.attrib.get('col-sizes', None)
-        if col_sizes:
-            # convert comma separated string into int list
-            col_sizes = list(map(int, col_sizes.split(',')))
-            col_sizes = self._normalize_colsizes(col_sizes)
+        # only allow this, if col_sizes does not exist
+        if not col_sizes:
+            col_sizes = elem.attrib.get('col-sizes', None)
+            if col_sizes:
+                # convert comma separated string into int list
+                col_sizes = list(map(int, col_sizes.split(',')))
+                col_sizes = self._normalize_colsizes(col_sizes)
 
         # if col_sizes is not specified, iterate over all columns
         # and find their respective text size
