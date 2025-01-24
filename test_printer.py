@@ -11,6 +11,13 @@ test_temp = """
             <left>TOTAL</left>
             <right>0.15</right>
         </line>
+        <table col-sizes="1,2,2">
+            <tr>
+                <td>2</td>
+                <td align="center">Product</td>
+                <td align="right">10.00</td>
+            </tr>
+        </table>
         <barcode encoding='ean13'>
             5449000000996
         </barcode>

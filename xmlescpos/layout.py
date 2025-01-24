@@ -8,6 +8,8 @@ import hashlib
 import re
 import xml.etree.ElementTree as ET
 from PIL import Image
+import textwrap
+import itertools
 
 from escpos.constants import PrinterCommands, StarCommands, QR_ECLEVEL_L, QR_MODEL_2, CTL_FF
 
@@ -325,6 +327,173 @@ class XmlLineSerializer:
         return ' ' * self.indent * self.tabwidth + self.lbuffer + ' ' * \
             (self.width - self.clwidth - self.crwidth) + self.rbuffer
 
+class XmlTableLayout(object):
+    """ Helper class. Parses an XML table layout.
+
+    Convert to ESC/POS. Send to a pyton-escpos printer object.
+    """
+    def __init__(self, stylestack, serializer, min_col_size=5, col_spacing=2):
+        """ Parameters:
+        
+        stylestack (Stylestack): the currently used stylestack
+        serializer (XmlSerializer): the currently used serializer
+        min_col_size (int): minimum size of a column (in characters)
+        col_spacing (int): number of whitespace characters between columns
+        """
+        self.stylestack = stylestack
+        self.serializer = serializer
+        self.min_col_size = min_col_size
+        self.col_spacing = col_spacing
+
+    def _normalize_colsizes(self, col_sizes):
+        """ Normalizes a list of column sizes to match the maximum available 
+        amount of characters on the receipt.
+        """
+        # find largest col size index
+        max_col_idx = max(range(len(col_sizes)), key=lambda i: col_sizes[i])
+        # retreive default width for receipt
+        width = self.stylestack.get('width')
+
+        # build sum for col size normaliziation
+        sum_col_size = sum(col_sizes)
+        for idx, col in enumerate(col_sizes):
+            # normalize col size (into real number)
+            size = col / sum_col_size * width
+            # each col must be at least n chars wide
+            if size < self.min_col_size:
+                size = self.min_col_size
+
+            # round to next integer, as width is measured
+            # in characters
+            col_sizes[idx] = round(size)
+
+        # ensure that sum of all columns does not exceed maximum receipt width
+        # all overflow is deducted from largest column
+        col_sizes[max_col_idx] -= max(0, sum(col_sizes) - width)
+        return col_sizes
+    
+    def _get_width(self, width):
+        """ Calculates the actual character width to use based on
+        currently active font size.
+        For double size font, we just have half of the actual character count available.
+        """
+
+        is_double = self.stylestack.get('size') in ('double', 'double-width')
+        factor = 2 if is_double else 1
+        return int(width / factor)
+
+    def _print_table_row(self, elem, col_sizes):
+        sublines = []
+
+        # in this loop, split each line into one or more lines
+        # depending on the length of the text
+        for idx, td in enumerate(elem):
+            try:
+                col_width = col_sizes[idx]
+            except IndexError:
+                # catch index error as it could happen that XML
+                # specifies an incorrect (too few) amount of columns
+                raise Exception(f'Attribute "col-sizes" only contains {len(col_sizes)} elements but {len(elem)} required')
+            
+            sublines.append(zip(
+                textwrap.wrap(td.text or '', width=self._get_width(col_width - self.col_spacing)),
+                itertools.repeat({
+                    # enable bold mode if tag name is "th"
+                    'bold': 'on' if td.tag == 'th' else 'off',
+                    # copy rest of attributes
+                    **td.attrib,
+                })
+            ))
+
+        # iterate over transposed sublines
+        for line in map(list, itertools.zip_longest(*sublines, fillvalue=(None, None))):
+            for idx, (col, style) in enumerate(line):
+                col_width = col_sizes[idx]
+                self.stylestack.push()
+                align = None
+
+                if (style):
+                    # extract the align attribute
+                    align = style.get('align')
+                    # ... and overwrite it with left
+                    # the default ESC command for alignment
+                    # does not work in this case, as it only works line-wise
+                    # but as we are constructing our own table here
+                    # all other aligns than 'left' destroy the layout
+                    style['align'] = 'left'
+                    self.stylestack.set(style)
+
+                self.serializer.start_inline(self.stylestack)
+                text = (col or '')
+                # -1 takes care for the additional space character
+                # that is introduced by serializer.start_inline()
+                if idx > 0:
+                    text = ' ' * self._get_width(self.col_spacing - 1) + text
+                pad_size = self._get_width(col_width - 1)
+                
+                if align == 'right':
+                    text = text.rjust(pad_size)
+                elif align == 'center':
+                    text = text.center(pad_size)
+                else:
+                    text = text.ljust(pad_size)
+
+                self.serializer.pre(text)
+                self.serializer.end_entity()
+                self.stylestack.pop()
+
+            self.serializer.linebreak()
+
+    def print_elem(self, elem, col_sizes=None):
+        # don't print if it's an uknown element
+        if elem.tag not in ('table', 'tbody', 'tfoot'):
+            return
+        
+        self.stylestack.push()
+        if elem.tag == 'tbody':
+            self.stylestack.set({'underline': 'on'})
+        elif elem.tag == 'tfoot':
+            self.stylestack.set({'underline': 'double'})
+        
+        # with col-sizes one can specify the size ratio for all columns
+        col_sizes = elem.attrib.get('col-sizes', None)
+        if col_sizes:
+            # convert comma separated string into int list
+            col_sizes = list(map(int, col_sizes.split(',')))
+            col_sizes = self._normalize_colsizes(col_sizes)
+
+        # if col_sizes is not specified, iterate over all columns
+        # and find their respective text size
+        if not col_sizes:
+            col_sizes = []
+            for child in elem:
+                # only consider tr elements
+                if child.tag != 'tr':
+                    continue
+
+                # iterate all tds
+                for idx, td in enumerate(child):
+                    textlen = len(td.text or '')
+                    if idx == len(col_sizes):
+                        # if current td index is the same as the list's length
+                        # we add another item
+                        col_sizes.append(textlen)
+                    else:
+                        # store the maximum text length
+                        col_sizes[idx] = max(col_sizes[idx], textlen)
+
+            # finally, normalize everything
+            col_sizes = self._normalize_colsizes(col_sizes)
+            
+        # now print all rows/columns
+        for child in elem:
+            if child.tag == 'tr':
+                self._print_table_row(child, col_sizes)
+            else:
+                # nested tbody or tfoot
+                self.print_elem(child, col_sizes)
+
+        self.stylestack.pop()
 
 class Layout(object):
     """Main class. Parses an XML layout.
@@ -506,6 +675,9 @@ class Layout(object):
                     printer,
                     indent=indent + 1)
             serializer.end_entity()
+
+        elif elem.tag == 'table':
+            XmlTableLayout(stylestack, serializer).print_elem(elem)
 
         elif elem.tag == 'pre':
             serializer.start_block(stylestack)

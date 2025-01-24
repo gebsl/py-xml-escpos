@@ -99,6 +99,33 @@ the character used to represent bullets.
         <li>bar</li>
     </ul>
 
+### Table tags
+ - `table`, `tbody`, `tfoot`, `tr`, `th`, `td`
+
+ Width of columns is determined automatically. Optionally, a fixed column size can be specified using the `col-sizes` parameter. 
+ Each number specifies how wide a column should be and is a fraction of the sum of all column sizes. 
+ In this example, column 1 and 3 each will occupy 1/4 of the available space, while column 2 will occupy 2/4 of the available space.
+
+ ```
+<table col-sizes="1,2,1">
+  <tr>
+    <th>Amount</th>
+    <th>Description</th>
+    <th>Price</th>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td>Beer 0.5L</td>
+    <td align="right">€ 8.00</td>
+  </tr>
+  <tr>
+    <td>1</td>
+    <td>Coca Cola 0.3L</td>
+    <td align="right">€ 3.50</td>
+  </tr>
+</table>
+ ```
+
 ### Image Tags
 The `img` tag prints the picture specified by the `src` attribute. 
 The `src` attribute must contain the picture encoded in png, gif 
