@@ -100,7 +100,7 @@ the character used to represent bullets.
     </ul>
 
 ### Table tags
- - `table`, `tbody`, `tfoot`, `tr`, `th`, `td`
+ - `table`, `thead`, `tbody`, `tfoot`, `tr`, `th`, `td`
 
  Width of columns is determined automatically. Optionally, a fixed column size can be specified using the `col-sizes` parameter. 
  Each number specifies how wide a column should be and is a fraction of the sum of all column sizes. 

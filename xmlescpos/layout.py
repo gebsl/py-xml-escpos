@@ -455,11 +455,11 @@ class XmlTableLayout(object):
 
     def print_elem(self, elem, col_sizes=None):
         # don't print if it's an uknown element
-        if elem.tag not in ('table', 'tbody', 'tfoot'):
+        if elem.tag not in ('table', 'thead', 'tbody', 'tfoot'):
             return
         
         self.stylestack.push()
-        if elem.tag == 'tbody':
+        if elem.tag == 'thead':
             self.stylestack.set({'underline': 'on'})
         elif elem.tag == 'tfoot':
             self.stylestack.set({'underline': 'double'})
@@ -499,7 +499,7 @@ class XmlTableLayout(object):
             if child.tag == 'tr':
                 self._print_table_row(child, col_sizes)
             else:
-                # nested tbody or tfoot
+                # nested thead, tbody or tfoot
                 self.print_elem(child, col_sizes)
 
         self.stylestack.pop()
