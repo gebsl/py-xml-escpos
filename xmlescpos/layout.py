@@ -408,6 +408,9 @@ class XmlTableLayout(object):
         # iterate over transposed sublines
         for line in map(list, itertools.zip_longest(*sublines, fillvalue=(None, None))):
             for idx, (col, style) in enumerate(line):
+                is_first_index = idx == 0
+                is_last_index = idx == (len(col_sizes) - 1)
+                
                 col_width = col_sizes[idx]
                 self.stylestack.push()
                 align = None
@@ -425,11 +428,17 @@ class XmlTableLayout(object):
 
                 self.serializer.start_inline(self.stylestack)
                 text = (col or '')
-                # -1 takes care for the additional space character
-                # that is introduced by serializer.start_inline()
-                if idx > 0:
+                # makes sure spacing is not added before first col
+                if not is_first_index:
+                    # -1 takes care for the additional space character
+                    # that is introduced by serializer.start_inline()
                     text = ' ' * self._get_width(self.col_spacing - 1) + text
-                pad_size = self._get_width(col_width - 1)
+
+                # again, this -1 takes care for the additional space character
+                # that is introduced by serializer.start_inline()
+                # but for the last column, no serializer.start_inline() will follow
+                # that's why in this case we need to actually fully pad the text
+                pad_size = self._get_width(col_width - (0 if is_last_index else 1))
                 
                 if align == 'right':
                     text = text.rjust(pad_size)
@@ -446,21 +455,23 @@ class XmlTableLayout(object):
 
     def print_elem(self, elem, col_sizes=None):
         # don't print if it's an uknown element
-        if elem.tag not in ('table', 'tbody', 'tfoot'):
+        if elem.tag not in ('table', 'thead', 'tbody', 'tfoot'):
             return
         
         self.stylestack.push()
-        if elem.tag == 'tbody':
+        if elem.tag == 'thead':
             self.stylestack.set({'underline': 'on'})
         elif elem.tag == 'tfoot':
             self.stylestack.set({'underline': 'double'})
         
         # with col-sizes one can specify the size ratio for all columns
-        col_sizes = elem.attrib.get('col-sizes', None)
-        if col_sizes:
-            # convert comma separated string into int list
-            col_sizes = list(map(int, col_sizes.split(',')))
-            col_sizes = self._normalize_colsizes(col_sizes)
+        # only allow this, if col_sizes does not exist
+        if not col_sizes:
+            col_sizes = elem.attrib.get('col-sizes', None)
+            if col_sizes:
+                # convert comma separated string into int list
+                col_sizes = list(map(int, col_sizes.split(',')))
+                col_sizes = self._normalize_colsizes(col_sizes)
 
         # if col_sizes is not specified, iterate over all columns
         # and find their respective text size
@@ -490,7 +501,7 @@ class XmlTableLayout(object):
             if child.tag == 'tr':
                 self._print_table_row(child, col_sizes)
             else:
-                # nested tbody or tfoot
+                # nested thead, tbody or tfoot
                 self.print_elem(child, col_sizes)
 
         self.stylestack.pop()
