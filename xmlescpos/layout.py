@@ -408,6 +408,9 @@ class XmlTableLayout(object):
         # iterate over transposed sublines
         for line in map(list, itertools.zip_longest(*sublines, fillvalue=(None, None))):
             for idx, (col, style) in enumerate(line):
+                is_first_index = idx == 0
+                is_last_index = idx == (len(col_sizes) - 1)
+                
                 col_width = col_sizes[idx]
                 self.stylestack.push()
                 align = None
@@ -425,11 +428,17 @@ class XmlTableLayout(object):
 
                 self.serializer.start_inline(self.stylestack)
                 text = (col or '')
-                # -1 takes care for the additional space character
-                # that is introduced by serializer.start_inline()
-                if idx > 0:
+                # makes sure spacing is not added before first col
+                if not is_first_index:
+                    # -1 takes care for the additional space character
+                    # that is introduced by serializer.start_inline()
                     text = ' ' * self._get_width(self.col_spacing - 1) + text
-                pad_size = self._get_width(col_width - 1)
+
+                # again, this -1 takes care for the additional space character
+                # that is introduced by serializer.start_inline()
+                # but for the last column, no serializer.start_inline() will follow
+                # that's why in this case we need to actually fully pad the text
+                pad_size = self._get_width(col_width - (0 if is_last_index else 1))
                 
                 if align == 'right':
                     text = text.rjust(pad_size)
