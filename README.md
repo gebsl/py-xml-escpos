@@ -48,8 +48,8 @@ made the project compatible with Python3.
 [xoe-labs](https://github.com/xoe-labs/py-xml-escpos/) added support for QR codes and python-escpos v3,
 which is not yet final but works better than the old ones.
 
-As of version 0.3.0 this package requires our [fork of python-escpos](https://github.com/tap4drink/python-escpos),
-which adds support for Star printers, but is backwards-compatible otherwise.
+~~As of version 0.3.0 this package requires our [fork of python-escpos](https://github.com/tap4drink/python-escpos),
+which adds support for Star printers, but is backwards-compatible otherwise.~~
 
 We try to add all useful changes in this repo, pull requests welcome.
 

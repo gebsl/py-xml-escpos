@@ -11,7 +11,7 @@ from PIL import Image
 import textwrap
 import itertools
 
-from escpos.constants import PrinterCommands, StarCommands, QR_ECLEVEL_L, QR_MODEL_2, CTL_FF
+import escpos.constants as cmdset
 
 import logging
 import six
@@ -38,7 +38,7 @@ class StyleStack:
 
     def __init__(self, profile):
         self.profile = profile
-        self.cmdset = StarCommands() if self.profile.features.get('starCommands', False) else PrinterCommands()
+        self.cmdset = cmdset
         self.stack = []
         self.defaults = {   # default style values
             'align': 'left',
@@ -705,9 +705,9 @@ class Layout(object):
             serializer.end_entity()
         
         elif elem.tag == 'qr':
-            ec = int(elem.attrib.get('ec', QR_ECLEVEL_L))
+            ec = int(elem.attrib.get('ec', stylestack.cmdset.QR_ECLEVEL_L))
             size = int(elem.attrib.get('size', 3))
-            model = int(elem.attrib.get('model', QR_MODEL_2))
+            model = int(elem.attrib.get('model', stylestack.cmdset.QR_MODEL_2))
             center = bool(elem.attrib.get('center', False))
             native = bool(elem.attrib.get('native', False))
             impl = elem.attrib.get('impl', 'bitImageRaster')
@@ -763,7 +763,7 @@ class Layout(object):
 
         if 'cut' in root.attrib and root.attrib['cut'] == 'true':
             if self.slip_sheet_mode == 'slip':
-                printer._raw(CTL_FF)
+                printer._raw(stylestack.cmdset.CTL_FF)
             else:
                 printer.cut()
 
